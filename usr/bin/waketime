@@ -1,0 +1,85 @@
+#!/usr/bin/env python3
+"""a utility to log and show the time since last wake."""
+
+from os import path
+import getpass
+import os
+import subprocess
+import sys
+import time
+
+user = getpass.getuser()
+user_uid = os.geteuid()
+user_dir = f'/run/user/{user_uid}'
+waketime_dir = f'{user_dir}/waketime'
+waketime_file = f'{waketime_dir}/time_of_last_wake'
+
+
+def show_file():
+    """print the path of the time_of_last_wake file for the current user."""
+    print(waketime_file)
+
+
+def log():
+    """maybe log the current timestamp to the time_of_last_wake file."""
+    if not path.isdir(user_dir):
+        # user not logged in, so do nothing.
+        return
+
+    if not path.isdir(waketime_dir):
+        os.mkdir(waketime_dir)
+
+    epoch_seconds = int(time.time())
+    with open(waketime_file, mode='w') as f:
+        print(epoch_seconds, file=f)
+
+
+def since():
+    """print the time passed since last wake in minutes, then hours."""
+    if not path.isdir(user_dir):
+        print(f'user {user} not logged in')
+        sys.exit(1)
+
+    if not path.isfile(waketime_file):
+        log()
+
+    with open(waketime_file) as f:
+        epoch_seconds = int(f.read().strip())
+    difference = int(time.time()) - epoch_seconds
+    minutes = difference // 60
+    if minutes < 90:
+        print(f'{minutes} minutes')
+    else:
+        hours = minutes / 60
+        print(f'{hours:.1f} hours')
+
+
+def enable():
+    """enable the waketime service for the current user."""
+    subprocess.run(['systemctl', 'enable', f'waketime@{user}'], check=True)
+    subprocess.run(['systemctl', 'daemon-reload'], check=True)
+
+    subprocess.run(['systemctl', '--user', 'enable', 'waketime'], check=True)
+    subprocess.run(['systemctl', '--user', 'daemon-reload'], check=True)
+
+
+def disable():
+    """disable the waketime service for the current user."""
+    user = os.getlogin()
+    subprocess.run(['systemctl', 'disable', f'waketime@{user}'], check=True)
+    subprocess.run(['systemctl', 'daemon-reload'], check=True)
+
+    subprocess.run(['systemctl', '--user', 'disable', 'waketime'], check=True)
+    subprocess.run(['systemctl', '--user', 'daemon-reload'], check=True)
+
+
+if __name__ == '__main__':
+
+    commands = [log, show_file, since, enable, disable]
+    names = dict((f.__name__.replace('_', '-'), f) for f in commands)
+
+    if len(sys.argv) != 2 or sys.argv[1] not in names.keys():
+        print(f'usage: {sys.argv[0]} <{"|".join(names.keys())}>')
+        sys.exit(1)
+
+    names[sys.argv[1]]()

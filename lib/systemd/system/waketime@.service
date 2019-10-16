@@ -1,0 +1,15 @@
+[Unit]
+Description=Log the waketime of the device for user %i.
+After=hibernate.target
+After=hybrid-sleep.target
+After=suspend.target
+
+[Service]
+Type=oneshot
+User=%i
+ExecStart=/usr/bin/waketime log
+
+[Install]
+WantedBy=hibernate.target
+WantedBy=hybrid-sleep.target
+WantedBy=suspend.target

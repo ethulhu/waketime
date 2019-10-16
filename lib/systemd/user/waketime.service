@@ -1,0 +1,10 @@
+[Unit]
+Description=Set the initial waketime for the user when they log in.
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/waketime log
+
+[Install]
+WantedBy=default.target
+
