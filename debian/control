@@ -1,0 +1,10 @@
+Source: eth-waketime
+Package: eth-waketime
+Section: misc
+Priority: optional
+Architecture: all
+Build-Depends:
+Depends:
+Essential: no
+Maintainer: Eth Morgan <eth@ethulhu.co.uk>
+Description: log when users log-in or the device wakes from sleep.
